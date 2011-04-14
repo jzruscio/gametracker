@@ -12,19 +12,36 @@ require 'sass'
 if ENV['RACK_ENV'] != 'production'
   db = Sequel.connect(ENV['SK_DB_URL'])
 else
-  db = Sequel.connect(ENV['DATABASE_URL'])
+  db = Sequel.connect(ENV['DATABASE_URL'] || 'sqlite://my.db')
 end
 
-class Players < Sequel::Model
+class Game < Sequel::Model
+  many_to_one :winner, :class => :Player
+  many_to_one :loser, :class => :Player
 end
 
-class Games < Sequel::Model
+class Player < Sequel::Model
+  one_to_many :winner_games, :class => :Game, :key => :winner_id
+  one_to_many :loser_games, :class => :Game, :key => :loser_id
 end
 
 class ScoreKeeper < Sinatra::Application
 
+  def compute_rankings
+    players = Game.distinct(:winner_id)
+    rankings = []
+    players.each do |p|
+      wins = Game.filter(:winner_id => p.winner_id).count
+      loses = Game.filter(:loser_id => p.winner_id).count
+      rankings.push({:name => Player.filter(:id => p.winner_id).first[:name], :wins => wins, :loses => loses, :percentage => wins/(wins+loses) * 100})
+    end
+     
+    rankings 
+  end
+
   get '/' do
-    @games = Games.order(:created_at)
+    @games = Game.order(:created_at.desc).limit(5)
+    @rankings = compute_rankings
     haml :scorekeeper
   end
 
@@ -33,9 +50,10 @@ class ScoreKeeper < Sinatra::Application
   end
 
   post '/new_game' do
-    Games.create(:winner => params[:winner],
+    Game.create(
+      :winner_id => Player.filter(:name => params[:winner_name]).first[:id],
       :winner_score => params[:winner_score],
-      :loser => params[:loser_score],
+      :loser_id => Player.filter(:name => params[:loser_name]).first[:id],
       :loser_score => params[:loser_score],
       :created_at => Time.now())
     redirect '/'

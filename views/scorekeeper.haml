@@ -1,9 +1,28 @@
-%h1 Welcome!
-- @games.each do |game|
-  %table
-    %tr 
-      %th Winner
-      %th Loser
+%h3 Last 5 Game Results
+%table
+  %tr 
+    %th Winner
+    %th Loser
+    %th Score
+    %th Date
+  - @games.each do |game|
     %tr
-      %td= game[:winner]
-      %td= game[:loser]
+      %td= Player.filter(:id => game[:winner_id]).first[:name]
+      %td= Player.filter(:id => game[:loser_id]).first[:name]
+      %td= "#{game[:winner_score]}-#{game[:loser_score]}"
+      %td= game[:created_at].strftime("%b %d, %Y")
+%h3 Player Rankings
+%table
+  %tr
+    %th Rank
+    %th Player
+    %th Winning %
+    %th Games Won
+    %th Games Lost
+  - @rankings.each_index do |index|
+    %tr
+      %td= index+1
+      %td= @rankings[index][:name]
+      %td="#{@rankings[index][:percentage]}%"
+      %td= @rankings[index][:wins]
+      %td= @rankings[index][:loses]

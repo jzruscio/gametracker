@@ -4,10 +4,10 @@ Sequel.migration do
     create_table(:games) do
       primary_key :id
       Timestamp :created_at
-      String :winner
-      String :loser
       Integer :winner_score
       Integer :loser_score
+      foreign_key :winner_id, :players
+      foreign_key :loser_id, :players
     end
   end
 
