@@ -1,0 +1,9 @@
+%html
+  %head
+    %title B/R Ping Pong Players
+  %body.bp
+    %a{:href => '/new_user'}New Player
+    %a{:href => '/new_game'}New Game
+    - if request.path_info != '/'
+      %a{:href => '/'}Home
+    = yield
