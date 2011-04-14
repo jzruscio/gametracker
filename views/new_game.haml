@@ -1,0 +1,11 @@
+%form{ :action => "/new_game", :method => "post"}
+  %fieldset
+    %label{:for => "winner"} Winner:
+    %input{:type => "text", :name => "winner", :class => "text"}
+    %label{:for => "winner_score"} Points:
+    %input{:type => "text", :name => "winner_score", :class => "text"}
+    %label{:for => "loser"} Loser:
+    %input{:type => "text", :name => "loser", :class => "text"}
+    %label{:for => "loser_score"} Points:
+    %input{:type => "text", :name => "loser_score", :class => "text"}
+  %input{:type => "submit", :value => "Send", :class => "button"}

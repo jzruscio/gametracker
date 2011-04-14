@@ -1,0 +1,9 @@
+%h1 Welcome!
+- @games.each do |game|
+  %table
+    %tr 
+      %th Winner
+      %th Loser
+    %tr
+      %td= game[:winner]
+      %td= game[:loser]
