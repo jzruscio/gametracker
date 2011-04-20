@@ -28,19 +28,41 @@ end
 class ScoreKeeper < Sinatra::Application
 
   def compute_rankings
-    players = Game.distinct(:winner_id)
+    players = Player.all
     rankings = []
     players.each do |p|
-      wins = Game.filter(:winner_id => p.winner_id).count
-      loses = Game.filter(:loser_id => p.winner_id).count
-      rankings.push({:name => Player.filter(:id => p.winner_id).first[:name], :wins => wins, :loses => loses, :percentage => wins/(wins+loses) * 100})
+      wins = Game.filter(:winner_id => p[:id]).count
+      loses = Game.filter(:loser_id => p[:id]).count
+      rankings.push({:name => p[:name], :wins => wins, :loses => loses, :percentage => (wins/(wins+loses).to_f).round(3) * 100})
     end
      
-    rankings 
+    rankings.sort_by{|k| k[:percentage]}.reverse
+  end
+
+  def create_new_user(name)
+    Player.create(:name => name, :created_at => Time.now())
+  end
+
+  def player_id_from_name(name)
+    player = Player.filter(:name => name)
+    if !player.empty?
+      return player.first[:id]
+    else
+      return nil
+    end
+  end
+
+  def player_name_from_id(id)
+    player = Player.filter(:id => id)
+    if !player.empty?
+      return player.first[:name]
+    else
+      return nil
+    end
   end
 
   get '/' do
-    @games = Game.order(:created_at.desc).limit(5)
+    @games = Game.order(:created_at.desc).limit(10)
     @rankings = compute_rankings
     haml :scorekeeper
   end
@@ -50,11 +72,23 @@ class ScoreKeeper < Sinatra::Application
   end
 
   post '/new_game' do
+    winner_id = player_id_from_name(params[:winner_name])
+    if winner_id == nil
+      create_new_user(params[:winner_name])
+      winner_id = player_id_from_name(params[:winner_name])
+    end
+    loser_id = player_id_from_name(params[:loser_name])
+    if loser_id == nil
+      create_new_user(params[:loser_name])
+      loser_id = player_id_from_name(params[:loser_name])
+    end
+    served = player_id_from_name(params[:served_name])
     Game.create(
-      :winner_id => Player.filter(:name => params[:winner_name]).first[:id],
+      :winner_id => winner_id,
       :winner_score => params[:winner_score],
-      :loser_id => Player.filter(:name => params[:loser_name]).first[:id],
+      :loser_id => loser_id,
       :loser_score => params[:loser_score],
+      :served => served,
       :created_at => Time.now())
     redirect '/'
   end
@@ -64,7 +98,7 @@ class ScoreKeeper < Sinatra::Application
   end
 
   post '/new_user' do
-    Players.create(:name => params[:name], :created_at => Time.now())
+    create_new_user(params[:name])
     redirect '/'
   end
 
