@@ -1,4 +1,5 @@
-%h3 Last 5 Game Results
+%h3 Last 10 Game Results
+%b Server is in uppercase
 %table
   %tr 
     %th Winner
@@ -6,9 +7,21 @@
     %th Score
     -#%th Date
   - @games.each do |game|
+    - winner = player_name_from_id(game[:winner_id])
+    - loser = player_name_from_id(game[:loser_id])
+    - served = player_name_from_id(game[:served])
+    - [winner, loser].each do |name|
+      - if name == player_name_from_id(game[:served])
+        - name = "<u>#{name}</u>"
     %tr
-      %td= Player.filter(:id => game[:winner_id]).first[:name]
-      %td= Player.filter(:id => game[:loser_id]).first[:name]
+      - if winner == served
+        %td= winner.upcase
+      - else 
+        %td= winner
+      - if loser == served
+        %td= loser.upcase
+      - else 
+        %td= loser
       %td= "#{game[:winner_score]}-#{game[:loser_score]}"
       -#%td= game[:created_at].strftime("%b %d, %Y")
 %h3 Player Rankings

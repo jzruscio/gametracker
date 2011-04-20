@@ -62,7 +62,7 @@ class ScoreKeeper < Sinatra::Application
   end
 
   get '/' do
-    @games = Game.order(:created_at.desc).limit(5)
+    @games = Game.order(:created_at.desc).limit(10)
     @rankings = compute_rankings
     haml :scorekeeper
   end
