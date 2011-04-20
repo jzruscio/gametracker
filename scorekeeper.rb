@@ -52,6 +52,15 @@ class ScoreKeeper < Sinatra::Application
     end
   end
 
+  def player_name_from_id(id)
+    player = Player.filter(:id => id)
+    if !player.empty?
+      return player.first[:name]
+    else
+      return nil
+    end
+  end
+
   get '/' do
     @games = Game.order(:created_at.desc).limit(5)
     @rankings = compute_rankings
@@ -73,11 +82,13 @@ class ScoreKeeper < Sinatra::Application
       create_new_user(params[:loser_name])
       loser_id = player_id_from_name(params[:loser_name])
     end
+    served = player_id_from_name(params[:served_name])
     Game.create(
       :winner_id => winner_id,
       :winner_score => params[:winner_score],
       :loser_id => loser_id,
       :loser_score => params[:loser_score],
+      :served => served,
       :created_at => Time.now())
     redirect '/'
   end
