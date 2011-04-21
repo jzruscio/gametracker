@@ -1,3 +1,18 @@
+%h3 Player Rankings
+%table
+  %tr
+    %th Rank
+    %th Player
+    %th Winning %
+    %th Sets Won
+    %th Sets Lost
+  - @rankings.each_index do |index|
+    %tr
+      %td= index+1
+      %td= @rankings[index][:name]
+      %td="#{@rankings[index][:percentage]}%"
+      %td= @rankings[index][:wins]
+      %td= @rankings[index][:loses]
 %h3 Last 10 Game Results
 %b Server is in uppercase
 %table
@@ -24,18 +39,14 @@
         %td= loser
       %td= "#{game[:winner_score]}-#{game[:loser_score]}"
       -#%td= game[:created_at].strftime("%b %d, %Y")
-%h3 Player Rankings
+%h3 Last 5 Set Results
 %table
-  %tr
-    %th Rank
-    %th Player
-    %th Winning %
-    %th Games Won
-    %th Games Lost
-  - @rankings.each_index do |index|
+  %tr 
+    %th Winner
+    %th Loser
+    -#%th Date
+  - @sets.each do |set|
     %tr
-      %td= index+1
-      %td= @rankings[index][:name]
-      %td="#{@rankings[index][:percentage]}%"
-      %td= @rankings[index][:wins]
-      %td= @rankings[index][:loses]
+      %td= player_name_from_id(set[:winner_id])
+      %td= player_name_from_id(set[:loser_id])
+      -#%td= set[:created_at].strftime("%b %d, %Y")

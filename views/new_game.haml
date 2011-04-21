@@ -1,13 +1,31 @@
 %form{ :action => "/new_game", :method => "post"}
   %fieldset
-    %label{:for => "served"} Served:
-    %input{:type => "text", :name => "served_name", :class => "text"}
-    %label{:for => "winner"} Winner:
-    %input{:type => "text", :name => "winner_name", :class => "text"}
-    %label{:for => "winner_score"} Points:
-    %input{:type => "text", :name => "winner_score", :class => "text"}
-    %label{:for => "loser"} Loser:
-    %input{:type => "text", :name => "loser_name", :class => "text"}
-    %label{:for => "loser_score"} Points:
-    %input{:type => "text", :name => "loser_score", :class => "text"}
+    %label{:for => "player1"}Player 1
+    %input{:type => "text", :name => "player1", :class => "text"}
+    %label{:for => "player2"}Player 2
+    %input{:type => "text", :name => "player2", :class => "text"}
+    %br
+    %b Game 1:
+    %label{:for => "served1"} Served:
+    %input{:type => "text", :name => "served1", :class => "text"}
+    %label{:for => "winner1"} Winner:
+    %input{:type => "text", :name => "winner1", :class => "text"}
+    %label{:for => "score1"} Score:
+    %input{:type => "text", :name => "score1", :class => "text"}
+    %br
+    %b Game 2:
+    %label{:for => "served2"} Served:
+    %input{:type => "text", :name => "served2", :class => "text"}
+    %label{:for => "winner2"} Winner:
+    %input{:type => "text", :name => "winner2", :class => "text"}
+    %label{:for => "winner2"} Score:
+    %input{:type => "text", :name => "score2", :class => "text"}
+    %br
+    %b Game 3 (if necessary):
+    %label{:for => "served3"} Served:
+    %input{:type => "text", :name => "served3", :class => "text"}
+    %label{:for => "winner3"} Winner:
+    %input{:type => "text", :name => "winner3", :class => "text"}
+    %label{:for => "winner3"} Score:
+    %input{:type => "text", :name => "score3", :class => "text"}
   %input{:type => "submit", :value => "Send", :class => "button"}
