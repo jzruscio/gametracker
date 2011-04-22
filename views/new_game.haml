@@ -1,31 +1,36 @@
+%script{:type => 'text/javascript', :src => 'js/new_game.js'}
 %form{ :action => "/new_game", :method => "post"}
   %fieldset
     %label{:for => "player1"}Player 1
-    %input{:type => "text", :name => "player1", :class => "text"}
+    %select{:name => "player1", :id => "p1"}
+      - @players.each do |player|
+        %option{:value => player}=player
     %label{:for => "player2"}Player 2
-    %input{:type => "text", :name => "player2", :class => "text"}
+    %select{:name => "player2", :id => "p2"}
+      - @players.each do |player|
+        %option{:value => player}=player
     %br
     %b Game 1:
     %label{:for => "served1"} Served:
-    %input{:type => "text", :name => "served1", :class => "text"}
+    %select{:name => "served1", :id => "s1"}
     %label{:for => "winner1"} Winner:
-    %input{:type => "text", :name => "winner1", :class => "text"}
+    %select{:name => "winner1", :id => "w1"}
     %label{:for => "score1"} Score:
-    %input{:type => "text", :name => "score1", :class => "text"}
+    %input{:type => "text", :name => "score1", :id => "sc1", :class => "text"}
     %br
     %b Game 2:
     %label{:for => "served2"} Served:
-    %input{:type => "text", :name => "served2", :class => "text"}
+    %select{:name => "served2", :id => "s2"}
     %label{:for => "winner2"} Winner:
-    %input{:type => "text", :name => "winner2", :class => "text"}
-    %label{:for => "winner2"} Score:
-    %input{:type => "text", :name => "score2", :class => "text"}
+    %select{:name => "winner2", :id => "w2"}
+    %label{:for => "score2"} Score:
+    %input{:type => "text", :name => "score2", :id => "sc2", :class => "text"}
     %br
     %b Game 3 (if necessary):
     %label{:for => "served3"} Served:
-    %input{:type => "text", :name => "served3", :class => "text"}
+    %select{:name => "served3", :id => "s3"}
     %label{:for => "winner3"} Winner:
-    %input{:type => "text", :name => "winner3", :class => "text"}
-    %label{:for => "winner3"} Score:
-    %input{:type => "text", :name => "score3", :class => "text"}
+    %select{:name => "winner3", :id => "w3"}
+    %label{:for => "score3"} Score:
+    %input{:type => "text", :name => "score3", :id => "sc3", :class => "text"}
   %input{:type => "submit", :value => "Send", :class => "button"}
