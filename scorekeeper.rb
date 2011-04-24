@@ -43,7 +43,7 @@ class ScoreKeeper < Sinatra::Application
       else 
         percentage = (wins/(wins+loses).to_f).round(3) * 100
       end
-      rankings.push({:name => p[:name], :wins => wins, :loses => loses, :percentage => percentage})
+      rankings.push({:name => p[:name], :wins => wins, :loses => loses, :percentage => percentage, :department => p[:department]})
     end
      
     rankings.sort_by{|k| k[:percentage]*(k[:wins] + k[:loses])}.reverse
@@ -140,5 +140,10 @@ class ScoreKeeper < Sinatra::Application
       :created_at => Time.now())
     redirect '/'
   end
+
+  get "/css/:sheet.css" do |sheet|
+    sass :"css/#{sheet}"
+  end
+
 
 end

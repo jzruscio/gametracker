@@ -1,52 +1,58 @@
-%h3 Player Rankings
-%table
-  %tr
-    %th Rank
-    %th Player
-    %th Winning %
-    %th Sets Won
-    %th Sets Lost
-  - @rankings.each_index do |index|
-    %tr
-      %td= index+1
-      %td= @rankings[index][:name]
-      %td="#{@rankings[index][:percentage]}%"
-      %td= @rankings[index][:wins]
-      %td= @rankings[index][:loses]
-%h3 Last 10 Game Results
-%b Server is in uppercase
-%table
-  %tr 
-    %th Winner
-    %th Loser
-    %th Score
-    -#%th Date
-  - @games.each do |game|
-    - winner = player_name_from_id(game[:winner_id])
-    - loser = player_name_from_id(game[:loser_id])
-    - served = player_name_from_id(game[:served])
-    - [winner, loser].each do |name|
-      - if name == player_name_from_id(game[:served])
-        - name = "<u>#{name}</u>"
-    %tr
-      - if winner == served
-        %td= winner.upcase
-      - else 
-        %td= winner
-      - if loser == served
-        %td= loser.upcase
-      - else 
-        %td= loser
-      %td= "#{game[:winner_score]}-#{game[:loser_score]}"
-      -#%td= game[:created_at].strftime("%b %d, %Y")
-%h3 Last 5 Set Results
-%table
-  %tr 
-    %th Winner
-    %th Loser
-    -#%th Date
-  - @sets.each do |set|
-    %tr
-      %td= player_name_from_id(set[:winner_id])
-      %td= player_name_from_id(set[:loser_id])
-      -#%td= set[:created_at].strftime("%b %d, %Y")
+#container.container_16
+  .grid_8
+    %h3 Player Rankings
+    %table.pp
+      %tr
+        %th Rank
+        %th Player
+        %th Winning %
+        %th Sets Won
+        %th Sets Lost
+        %th Department
+      - @rankings.each_index do |index|
+        %tr
+          %td= index+1
+          %td= @rankings[index][:name]
+          %td="#{@rankings[index][:percentage]}%"
+          %td= @rankings[index][:wins]
+          %td= @rankings[index][:loses]
+          %td= @rankings[index][:department]
+  .grid_4
+    %h3 Last 10 Game Results
+    %table.pp
+      %tr 
+        %th Winner
+        %th Loser
+        %th Score
+        -#%th Date
+      - @games.each do |game|
+        - winner = player_name_from_id(game[:winner_id])
+        - loser = player_name_from_id(game[:loser_id])
+        - served = player_name_from_id(game[:served])
+        - [winner, loser].each do |name|
+          - if name == player_name_from_id(game[:served])
+            - name = "<u>#{name}</u>"
+        %tr
+          - if winner == served
+            %td= winner.upcase
+          - else 
+            %td= winner
+          - if loser == served
+            %td= loser.upcase
+          - else 
+            %td= loser
+          %td= "#{game[:winner_score]}-#{game[:loser_score]}"
+          -#%td= game[:created_at].strftime("%b %d, %Y")
+    %b Server is in uppercase
+  .grid_4
+    %h3 Last 5 Set Results
+    %table.pp
+      %tr 
+        %th Winner
+        %th Loser
+        -#%th Date
+      - @sets.each do |set|
+        %tr
+          %td= player_name_from_id(set[:winner_id])
+          %td= player_name_from_id(set[:loser_id])
+          -#%td= set[:created_at].strftime("%b %d, %Y")
