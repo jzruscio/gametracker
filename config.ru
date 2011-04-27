@@ -1,4 +1,4 @@
-require 'scorekeeper'
+require 'gametracker'
 
 set :root, File.dirname(__FILE__)
 
@@ -8,4 +8,4 @@ if ENV['RACK_ENV'] != 'production'
   $stderr.reopen(log)
 end
 
-run ScoreKeeper
+run GameTracker

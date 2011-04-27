@@ -26,11 +26,11 @@
         %th Score
         -#%th Date
       - @games.each do |game|
-        - winner = player_name_from_id(game[:winner_id])
-        - loser = player_name_from_id(game[:loser_id])
-        - served = player_name_from_id(game[:served])
+        - winner = Player.name_from_id(game[:winner_id])
+        - loser = Player.name_from_id(game[:loser_id])
+        - served = Player.name_from_id(game[:served])
         - [winner, loser].each do |name|
-          - if name == player_name_from_id(game[:served])
+          - if name == Player.name_from_id(game[:served])
             - name = "<u>#{name}</u>"
         %tr
           - if winner == served
@@ -53,6 +53,6 @@
         -#%th Date
       - @sets.each do |set|
         %tr
-          %td= player_name_from_id(set[:winner_id])
-          %td= player_name_from_id(set[:loser_id])
+          %td= Player.name_from_id(set[:winner_id])
+          %td= Player.name_from_id(set[:loser_id])
           -#%td= set[:created_at].strftime("%b %d, %Y")

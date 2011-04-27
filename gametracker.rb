@@ -24,13 +24,22 @@ end
 class Player < Sequel::Model
   one_to_many :winner_games, :class => :Game, :key => :winner_id
   one_to_many :loser_games, :class => :Game, :key => :loser_id
+
+  def self.id_from_name(name)
+    filter(:name => name).first[:id] || nil
+  end
+
+  def self.name_from_id(id)
+    filter(:id => id).first[:name] || nil
+  end
+
 end
 
 class GameSet < Sequel::Model(db[:sets])
   one_to_many :games
 end
 
-class ScoreKeeper < Sinatra::Application
+class GameTracker < Sinatra::Application
 
   def compute_rankings
     players = Player.all
@@ -53,24 +62,6 @@ class ScoreKeeper < Sinatra::Application
     Player.create(:name => name, :created_at => Time.now())
   end
 
-  def player_id_from_name(name)
-    player = Player.filter(:name => name)
-    if !player.empty?
-      return player.first[:id]
-    else
-      return nil
-    end
-  end
-
-  def player_name_from_id(id)
-    player = Player.filter(:id => id)
-    if !player.empty?
-      return player.first[:name]
-    else
-      return nil
-    end
-  end
-
   def set_winner(winners)
     winners.group_by do |e|
       e
@@ -80,9 +71,9 @@ class ScoreKeeper < Sinatra::Application
   def save_game(winner, loser, served, score, set)
     points = score.split('-')
     game = Game.create(
-      :winner_id => player_id_from_name(winner),
-      :loser_id => player_id_from_name(loser),
-      :served => player_id_from_name(served),
+      :winner_id => Player.id_from_name(winner),
+      :loser_id => Player.id_from_name(loser),
+      :served => Player.id_from_name(served),
       :winner_score => points[0],
       :loser_score => points[1],
       :set_id => set,
@@ -94,7 +85,7 @@ class ScoreKeeper < Sinatra::Application
     @games = Game.order(:created_at.desc).limit(10)
     @sets = GameSet.order(:created_at.desc).limit(5)
     @rankings = compute_rankings
-    haml :scorekeeper
+    haml :gametracker
   end
 
   get '/new_game' do
@@ -111,12 +102,12 @@ class ScoreKeeper < Sinatra::Application
     end
 
     players = [params[:player1], params[:player2]]
-    player1 = player_id_from_name(players[0])
-    player2 = player_id_from_name(players[1])
+    player1 = Player.id_from_name(players[0])
+    player2 = Player.id_from_name(players[1])
 
     set_winner = set_winner([params[:winner1], params[:winner2], params[:winner3]])
-    set_winner_id = player_id_from_name(set_winner)
-    set_loser_id = player_id_from_name( players - [set_winner])
+    set_winner_id = Player.id_from_name(set_winner)
+    set_loser_id = Player.id_from_name( players - [set_winner])
     set = GameSet.create(:winner_id => set_winner_id, :loser_id => set_loser_id, :created_at => Time.now())
 
     save_game(winners[0], players - [winners[0]], params[:served1], params[:score1], set[:id])
