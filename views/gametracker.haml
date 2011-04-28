@@ -4,6 +4,7 @@
     %table.pp
       %tr
         %th Rank
+        %th Elo Rating
         %th Player
         %th Winning %
         %th Sets Won
@@ -12,6 +13,7 @@
       - @rankings.each_index do |index|
         %tr
           %td= index+1
+          %td= @rankings[index][:sets_elo]
           %td= @rankings[index][:name]
           %td="#{@rankings[index][:percentage]}%"
           %td= @rankings[index][:wins]
