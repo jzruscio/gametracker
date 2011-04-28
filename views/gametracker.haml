@@ -1,6 +1,6 @@
 #container.container_16
-  .grid_7
-    %h3 Player Rankings
+  %div{:class => ['grid_12 prefix_2']}
+    %h3.center Player Rankings
     %table.pp
       %tr
         %th Rank (set elo)
@@ -19,8 +19,9 @@
           %td= @rankings[index][:wins]
           %td= @rankings[index][:loses]
           %td= @rankings[index][:department]
-  .grid_4
-    %h3 Last 10 Set Results
+  .clear
+  %div{:class => ['grid_4 prefix_2 suffix_3']}
+    %h3.center Last 10 Set Results
     %table.pp
       %tr 
         %th Winner
@@ -32,7 +33,7 @@
           %td="#{Player.name_from_id(set[:loser_id])} (#{set[:loser_elo]})"
           -#%td= set[:created_at].strftime("%b %d, %Y")
   .grid_5
-    %h3 Last 10 Game Results
+    %h3.center Last 10 Game Results
     %table.pp
       %tr 
         %th Winner
