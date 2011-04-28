@@ -1,25 +1,37 @@
 #container.container_16
-  .grid_8
+  .grid_7
     %h3 Player Rankings
     %table.pp
       %tr
-        %th Rank
-        %th Elo Rating
+        %th Rank (set elo)
         %th Player
+        %th Games Elo Rating
         %th Winning %
         %th Sets Won
         %th Sets Lost
         %th Department
       - @rankings.each_index do |index|
         %tr
-          %td= index+1
-          %td= @rankings[index][:sets_elo]
+          %td="#{index+1} (#{@rankings[index][:sets_elo]})"
           %td= @rankings[index][:name]
+          %td= @rankings[index][:games_elo]
           %td="#{@rankings[index][:percentage]}%"
           %td= @rankings[index][:wins]
           %td= @rankings[index][:loses]
           %td= @rankings[index][:department]
   .grid_4
+    %h3 Last 10 Set Results
+    %table.pp
+      %tr 
+        %th Winner
+        %th Loser
+        -#%th Date
+      - @sets.each do |set|
+        %tr
+          %td="#{Player.name_from_id(set[:winner_id])} (#{set[:winner_elo]})"
+          %td="#{Player.name_from_id(set[:loser_id])} (#{set[:loser_elo]})"
+          -#%td= set[:created_at].strftime("%b %d, %Y")
+  .grid_5
     %h3 Last 10 Game Results
     %table.pp
       %tr 
@@ -36,25 +48,13 @@
             - name = "<u>#{name}</u>"
         %tr
           - if winner == served
-            %td= winner.upcase
+            %td="#{winner.upcase} (#{game[:winner_elo]})"
           - else 
-            %td= winner
+            %td= "#{winner} (#{game[:winner_elo]})"
           - if loser == served
-            %td= loser.upcase
+            %td= "#{loser.upcase} (#{game[:loser_elo]})"
           - else 
-            %td= loser
+            %td= "#{loser} (#{game[:loser_elo]})"
           %td= "#{game[:winner_score]}-#{game[:loser_score]}"
           -#%td= game[:created_at].strftime("%b %d, %Y")
     %b Server is in uppercase
-  .grid_4
-    %h3 Last 5 Set Results
-    %table.pp
-      %tr 
-        %th Winner
-        %th Loser
-        -#%th Date
-      - @sets.each do |set|
-        %tr
-          %td= Player.name_from_id(set[:winner_id])
-          %td= Player.name_from_id(set[:loser_id])
-          -#%td= set[:created_at].strftime("%b %d, %Y")

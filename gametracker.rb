@@ -55,7 +55,7 @@ class GameTracker < Sinatra::Application
       else 
         percentage = (wins/(wins+loses).to_f).round(3) * 100
       end
-      rankings.push({:name => p[:name], :wins => wins, :loses => loses, :percentage => percentage, :department => p[:department], :sets_elo => p[:sets_elo]})
+      rankings.push({:name => p[:name], :wins => wins, :loses => loses, :percentage => percentage, :department => p[:department], :sets_elo => p[:sets_elo], :games_elo => p[:games_elo]})
     end
      
     rankings.sort_by{|k| k[:sets_elo]}.reverse
@@ -73,6 +73,7 @@ class GameTracker < Sinatra::Application
 
   def save_game(winner, loser, served, score, set)
     points = score.split('-')
+    elo = calc_games_elo(winner, loser);
     game = Game.create(
       :winner_id => Player.id_from_name(winner),
       :loser_id => Player.id_from_name(loser),
@@ -80,20 +81,23 @@ class GameTracker < Sinatra::Application
       :winner_score => points[0],
       :loser_score => points[1],
       :set_id => set,
-      :created_at => Time.now()
+      :created_at => Time.now(),
+      :winner_elo => elo[:winner],
+      :loser_elo => elo[:loser]
     )
   end
 
-  def update_sets_elo(w, l)
+  def calc_sets_elo(w, l)
     w_cur_elo = Player.filter(:id => w).first[:sets_elo] || 0
     l_cur_elo = Player.filter(:id => l).first[:sets_elo] || 0
     w_elo = Elo.compute(w_cur_elo, [ [ l_cur_elo, 1] ] )
     l_elo = Elo.compute(l_cur_elo, [ [ w_cur_elo, 0] ] )
     Player.filter(:id => w).update(:sets_elo => w_elo)
     Player.filter(:id => l).update(:sets_elo => l_elo)
+    {:winner => w_elo, :loser => l_elo}
   end
 
-  def update_games_elo(w, l)
+  def calc_games_elo(w, l)
     w_id = Player.id_from_name(w)
     l_id = Player.id_from_name(l)
     w_cur_elo = Player.filter(:id => w_id).first[:games_elo] || 0
@@ -102,11 +106,12 @@ class GameTracker < Sinatra::Application
     l_elo = Elo.compute(l_cur_elo, [ [ w_cur_elo, 0] ] )
     Player.filter(:id => w_id).update(:games_elo => w_elo)
     Player.filter(:id => l_id).update(:games_elo => l_elo)
+    {:winner => w_elo, :loser => l_elo}
   end
 
   get '/' do
     @games = Game.order(:created_at.desc).limit(10)
-    @sets = GameSet.order(:created_at.desc).limit(5)
+    @sets = GameSet.order(:created_at.desc).limit(10)
     @rankings = compute_rankings
     haml :gametracker
   end
@@ -131,16 +136,13 @@ class GameTracker < Sinatra::Application
     set_winner = set_winner([params[:winner1], params[:winner2], params[:winner3]])
     set_winner_id = Player.id_from_name(set_winner)
     set_loser_id = Player.id_from_name( players - [set_winner])
-    set = GameSet.create(:winner_id => set_winner_id, :loser_id => set_loser_id, :created_at => Time.now())
-    update_sets_elo(set_winner_id, set_loser_id)
+    sets_elo = calc_sets_elo(set_winner_id, set_loser_id)
+    set = GameSet.create(:winner_id => set_winner_id, :loser_id => set_loser_id, :created_at => Time.now(), :winner_elo => sets_elo[:winner], :loser_elo => sets_elo[:loser])
 
     save_game(winners[0], players - [winners[0]], params[:served1], params[:score1], set[:id])
-      update_games_elo(winners[0], players - [winners[0]])
     save_game(winners[1], players - [winners[1]], params[:served2], params[:score2], set[:id])
-      update_games_elo(winners[1], players - [winners[1]])
     if (winners[2])
       save_game(winners[2], players - [winners[2]], params[:served3], params[:score3], set[:id])
-      update_games_elo(winners[2], players - [winners[2]])
     end
 
 
