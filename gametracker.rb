@@ -1,4 +1,7 @@
 #!/usr/bin/ruby
+
+require 'lib/elo'
+
 require 'rubygems'
 require 'bundler/setup'
 
