@@ -55,10 +55,10 @@ class GameTracker < Sinatra::Application
       else 
         percentage = (wins/(wins+loses).to_f).round(3) * 100
       end
-      rankings.push({:name => p[:name], :wins => wins, :loses => loses, :percentage => percentage, :department => p[:department]})
+      rankings.push({:name => p[:name], :wins => wins, :loses => loses, :percentage => percentage, :department => p[:department], :sets_elo => p[:sets_elo]})
     end
      
-    rankings.sort_by{|k| k[:percentage]*(k[:wins] + k[:loses])}.reverse
+    rankings.sort_by{|k| k[:sets_elo]}.reverse
   end
 
   def create_new_user(name)
@@ -82,6 +82,26 @@ class GameTracker < Sinatra::Application
       :set_id => set,
       :created_at => Time.now()
     )
+  end
+
+  def update_sets_elo(w, l)
+    w_cur_elo = Player.filter(:id => w).first[:sets_elo] || 0
+    l_cur_elo = Player.filter(:id => l).first[:sets_elo] || 0
+    w_elo = Elo.compute(w_cur_elo, [ [ l_cur_elo, 1] ] )
+    l_elo = Elo.compute(l_cur_elo, [ [ w_cur_elo, 0] ] )
+    Player.filter(:id => w).update(:sets_elo => w_elo)
+    Player.filter(:id => l).update(:sets_elo => l_elo)
+  end
+
+  def update_games_elo(w, l)
+    w_id = Player.id_from_name(w)
+    l_id = Player.id_from_name(l)
+    w_cur_elo = Player.filter(:id => w_id).first[:games_elo] || 0
+    l_cur_elo = Player.filter(:id => l_id).first[:games_elo] || 0
+    w_elo = Elo.compute(w_cur_elo, [ [ l_cur_elo, 1] ] )
+    l_elo = Elo.compute(l_cur_elo, [ [ w_cur_elo, 0] ] )
+    Player.filter(:id => w_id).update(:games_elo => w_elo)
+    Player.filter(:id => l_id).update(:games_elo => l_elo)
   end
 
   get '/' do
@@ -112,12 +132,17 @@ class GameTracker < Sinatra::Application
     set_winner_id = Player.id_from_name(set_winner)
     set_loser_id = Player.id_from_name( players - [set_winner])
     set = GameSet.create(:winner_id => set_winner_id, :loser_id => set_loser_id, :created_at => Time.now())
+    update_sets_elo(set_winner_id, set_loser_id)
 
     save_game(winners[0], players - [winners[0]], params[:served1], params[:score1], set[:id])
+      update_games_elo(winners[0], players - [winners[0]])
     save_game(winners[1], players - [winners[1]], params[:served2], params[:score2], set[:id])
+      update_games_elo(winners[1], players - [winners[1]])
     if (winners[2])
       save_game(winners[2], players - [winners[2]], params[:served3], params[:score3], set[:id])
+      update_games_elo(winners[2], players - [winners[2]])
     end
+
 
     redirect '/'
   end
