@@ -78,7 +78,7 @@ class GameTracker < Sinatra::Application
   end
 
   def create_new_user(name)
-    Player.create(:name => name, :created_at => Time.now())
+    Player.create(:name => name, :created_at => Time.now(), :sets_elo => 0, :games_elo => 0)
   end
 
   def set_winner(winners)
