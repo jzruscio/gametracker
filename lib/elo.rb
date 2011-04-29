@@ -12,7 +12,7 @@ module Elo
       expected_score = opponent_scores.inject(0) do |sum, pair|
         sum += expected_score(player_score, pair[0])
       end
-      player_score + k_value(player_score) * (actual_score - expected_score)
+      (player_score + k_value(player_score) * (actual_score - expected_score)).to_i
     end
   
     def expected_score(player_score, opponent_score)
