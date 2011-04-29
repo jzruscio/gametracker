@@ -18,6 +18,22 @@ else
   db = Sequel.connect(ENV['DATABASE_URL'] || 'sqlite://my.db')
 end
 
+before do
+  @players = Player.order(:name).map(:name)
+end
+
+helpers do
+
+  def link_to_player player, current=nil
+    if player.capitalize == current
+      "#{player}"
+    else
+      "<a href=\"/user/#{Player.id_from_name(player.capitalize)}\">#{player}</a>"
+    end
+  end
+
+end
+
 class Game < Sequel::Model
   many_to_one :winner, :class => :Player
   many_to_one :loser, :class => :Player
@@ -109,9 +125,28 @@ class GameTracker < Sinatra::Application
     {:winner => w_elo, :loser => l_elo}
   end
 
+  def sets_with_games(player=nil)
+    sets_with_game_count = []
+    if player.nil?
+      sets = GameSet.order(:created_at.desc).limit(10)
+    else
+      sets = GameSet.filter(:winner_id => player).or(:loser_id => player).order(:created_at.desc).limit(10)
+    end
+    sets.each do |set|
+      sets_with_game_count.push({
+        :winner => Player.name_from_id(set[:winner_id]),
+        :loser => Player.name_from_id(set[:loser_id]),
+        :winner_elo => set[:winner_elo],
+        :loser_elo => set[:loser_elo],
+        :num_games => Game.filter(:set_id => set[:id].to_s()).count
+      })
+    end
+    sets_with_game_count
+  end
+
   get '/' do
     @games = Game.order(:created_at.desc).limit(10)
-    @sets = GameSet.order(:created_at.desc).limit(10)
+    @sets = sets_with_games
     @rankings = compute_rankings
     haml :gametracker
   end
@@ -119,6 +154,14 @@ class GameTracker < Sinatra::Application
   get '/new_game' do
     @players = Player.order(:name).map(:name)
     haml :new_game
+  end
+
+  get '/user/:id' do
+    @user = Player.filter(:id => params[:id]).first
+    @games = Game.filter(:winner_id => params[:id]).or(:loser_id => params[:id]).order(:created_at.desc)
+    @sets = sets_with_games(params[:id])
+    #@sets = GameSet.filter(:winner_id => params[:id]).or(:loser_id => params[:id]).order(:created_at.desc)
+    haml :user
   end
 
   post '/new_game' do
@@ -155,11 +198,21 @@ class GameTracker < Sinatra::Application
 
   post '/new_user' do
     Player.create(
-      :name => params[:name], 
+      :name => params[:name].capitalize, 
       :email => params[:email],
-      :department => params[:department],
+      :department => params[:department].capitalize,
       :created_at => Time.now())
     redirect '/'
+  end
+
+  get '/elo_ratings' do
+    p1_cur_elo = Player.filter(:name => params[:p1]).first[:sets_elo]
+    p2_cur_elo = Player.filter(:name => params[:p2]).first[:sets_elo]
+    p1_wins = Elo.compute(p1_cur_elo, [ [ p2_cur_elo, 1] ] )
+    p1_loses = Elo.compute(p1_cur_elo, [ [ p2_cur_elo, 0] ] )
+    p2_wins = Elo.compute(p2_cur_elo, [ [ p1_cur_elo, 1] ] )
+    p2_loses = Elo.compute(p2_cur_elo, [ [ p1_cur_elo, 0] ] )
+    return {:p1_wins => p1_wins, :p1_loses => p1_loses, :p2_wins => p2_wins, :p2_loses => p2_loses, :p1_cur => p1_cur_elo, :p2_cur => p2_cur_elo}.to_json
   end
 
   get "/css/:sheet.css" do |sheet|

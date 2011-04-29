@@ -1,0 +1,19 @@
+#container.container_16
+  %div{:class => ['grid_4 prefix_6 suffix_6']}
+    #elo_form
+      %h3 Elo Predictor
+      %form{ :action => "", :method => ""}
+        %label{:for => "player1"}Player 1
+        %select{:name => "player1", :id => "p1"}
+          - @players.each do |player|
+            %option{:value => player}=player
+        %br vs
+        %label{:for => "player2"}Player 2
+        %select{:name => "player2", :id => "p2"}
+          - @players.each do |player|
+            %option{:value => player}=player
+      %input{:type => "submit", :value => "Send", :class => "elo_button"}
+  .clear
+#container.container_16
+  %div{:class => ['grid_4 prefix_6 suffix_6']}
+    #elo_results

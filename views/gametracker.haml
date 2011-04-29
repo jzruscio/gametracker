@@ -1,7 +1,7 @@
 #container.container_16
   %div{:class => ['grid_12 prefix_2']}
     %h3.center Player Rankings
-    %table.pp
+    %table.pp.center
       %tr
         %th Rank (set elo)
         %th Player
@@ -13,49 +13,42 @@
       - @rankings.each_index do |index|
         %tr
           %td="#{index+1} (#{@rankings[index][:sets_elo]})"
-          %td= @rankings[index][:name]
+          %td=link_to_player(@rankings[index][:name])
           %td= @rankings[index][:games_elo]
           %td="#{@rankings[index][:percentage]}%"
           %td= @rankings[index][:wins]
           %td= @rankings[index][:loses]
           %td= @rankings[index][:department]
   .clear
-  %div{:class => ['grid_4 prefix_2 suffix_3']}
+  %div{:class => ['grid_5 prefix_2 suffix_1']}
     %h3.center Last 10 Set Results
-    %table.pp
+    %table.pp.center
       %tr 
         %th Winner
         %th Loser
+        %th # of Games
         -#%th Date
       - @sets.each do |set|
         %tr
-          %td="#{Player.name_from_id(set[:winner_id])} (#{set[:winner_elo]})"
-          %td="#{Player.name_from_id(set[:loser_id])} (#{set[:loser_elo]})"
+          %td="#{link_to_player(set[:winner])} (#{set[:winner_elo]})"
+          %td="#{link_to_player(set[:loser])} (#{set[:loser_elo]})"
+          %td=set[:num_games]
           -#%td= set[:created_at].strftime("%b %d, %Y")
-  .grid_5
+  .grid_7
     %h3.center Last 10 Game Results
-    %table.pp
+    %table.pp.center
       %tr 
         %th Winner
         %th Loser
         %th Score
         -#%th Date
       - @games.each do |game|
-        - winner = Player.name_from_id(game[:winner_id])
-        - loser = Player.name_from_id(game[:loser_id])
         - served = Player.name_from_id(game[:served])
-        - [winner, loser].each do |name|
-          - if name == Player.name_from_id(game[:served])
-            - name = "<u>#{name}</u>"
+        - winner = ((game[:served].to_i == game[:winner_id]) ? Player.name_from_id(game[:winner_id]).upcase : Player.name_from_id(game[:winner_id]))
+        - loser  =  (game[:served].to_i == game[:loser_id]) ? Player.name_from_id(game[:loser_id]).upcase : Player.name_from_id(game[:loser_id])
         %tr
-          - if winner == served
-            %td="#{winner.upcase} (#{game[:winner_elo]})"
-          - else 
-            %td= "#{winner} (#{game[:winner_elo]})"
-          - if loser == served
-            %td= "#{loser.upcase} (#{game[:loser_elo]})"
-          - else 
-            %td= "#{loser} (#{game[:loser_elo]})"
+          %td="#{link_to_player(winner)} (#{game[:winner_elo]})"
+          %td="#{link_to_player(loser)} (#{game[:loser_elo]})"
           %td= "#{game[:winner_score]}-#{game[:loser_score]}"
-          -#%td= game[:created_at].strftime("%b %d, %Y")
-    %b Server is in uppercase
+    %center
+      %b Server is in uppercase

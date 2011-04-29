@@ -1,0 +1,30 @@
+#container.container_16
+  %div{:class => ['grid_5 prefix_2 suffix_1']}
+    %h3.center Last 10 Set Results
+    %table.pp.center
+      %tr 
+        %th Winner
+        %th Loser
+        %th # of Games
+      - @sets.each do |set|
+        %tr
+          %td="#{link_to_player(set[:winner], @user[:name])} (#{set[:winner_elo]})"
+          %td="#{link_to_player(set[:loser], @user[:name])} (#{set[:loser_elo]})"
+          %td=set[:num_games]
+  .grid_5
+    %h3.center All Game Results
+    %table.pp
+      %tr 
+        %th Winner
+        %th Loser
+        %th Score
+        -#%th Date
+      - @games.each do |game|
+        - served = Player.name_from_id(game[:served])
+        - winner = ((game[:served].to_i == game[:winner_id]) ? Player.name_from_id(game[:winner_id]).upcase : Player.name_from_id(game[:winner_id]))
+        - loser  =  (game[:served].to_i == game[:loser_id]) ? Player.name_from_id(game[:loser_id]).upcase : Player.name_from_id(game[:loser_id])
+        %tr
+          %td="#{link_to_player(winner, @user[:name])} (#{game[:winner_elo]})"
+          %td="#{link_to_player(loser, @user[:name])} (#{game[:loser_elo]})"
+          %td= "#{game[:winner_score]}-#{game[:loser_score]}"
+    %b Server is in uppercase
