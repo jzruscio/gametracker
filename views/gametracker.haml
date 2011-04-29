@@ -10,15 +10,26 @@
         %th Sets Won
         %th Sets Lost
         %th Department
-      - @rankings.each_index do |index|
+      - @ranked.each_index do |index|
         %tr
-          %td="#{index+1} (#{@rankings[index][:sets_elo]})"
-          %td=link_to_player(@rankings[index][:name])
-          %td= @rankings[index][:games_elo]
-          %td="#{@rankings[index][:percentage]}%"
-          %td= @rankings[index][:wins]
-          %td= @rankings[index][:loses]
-          %td= @rankings[index][:department]
+          %td="#{index+1} (#{@ranked[index][:sets_elo]})"
+          %td=link_to_player(@ranked[index][:name])
+          %td= @ranked[index][:games_elo]
+          %td="#{@ranked[index][:percentage]}%"
+          %td= @ranked[index][:wins]
+          %td= @ranked[index][:loses]
+          %td= @ranked[index][:department]
+      - @unranked.each do |p|
+        %tr
+          %td="UR (#{p[:sets_elo]})"
+          %td=link_to_player(p[:name])
+          %td= p[:games_elo]
+          %td="#{p[:percentage]}%"
+          %td= p[:wins]
+          %td= p[:loses]
+          %td= p[:department]
+    %center
+      %b Must have played at least 3 sets to be ranked
   .clear
   %div{:class => ['grid_5 prefix_2 suffix_1']}
     %h3.center Last 10 Set Results

@@ -62,7 +62,8 @@ class GameTracker < Sinatra::Application
 
   def compute_rankings
     players = Player.all
-    rankings = []
+    ranked = []
+    unranked = []
     players.each do |p|
       wins = GameSet.filter(:winner_id => p[:id]).count || 0
       loses = GameSet.filter(:loser_id => p[:id]).count || 0
@@ -71,10 +72,15 @@ class GameTracker < Sinatra::Application
       else 
         percentage = (wins/(wins+loses).to_f).round(3) * 100
       end
-      rankings.push({:name => p[:name], :wins => wins, :loses => loses, :percentage => percentage, :department => p[:department], :sets_elo => p[:sets_elo], :games_elo => p[:games_elo]})
+      if ((wins + loses) > 2)
+        ranked.push({:name => p[:name], :wins => wins, :loses => loses, :percentage => percentage, :department => p[:department], :sets_elo => p[:sets_elo], :games_elo => p[:games_elo]})
+      else
+        unranked.push({:name => p[:name], :wins => wins, :loses => loses, :percentage => percentage, :department => p[:department], :sets_elo => p[:sets_elo], :games_elo => p[:games_elo]})
+      end
     end
      
-    rankings.sort_by{|k| k[:sets_elo]}.reverse
+    ranked = ranked.sort_by{|k| k[:sets_elo]}.reverse
+    return ranked, unranked
   end
 
   def create_new_user(name)
@@ -147,7 +153,7 @@ class GameTracker < Sinatra::Application
   get '/' do
     @games = Game.order(:created_at.desc).limit(10)
     @sets = sets_with_games
-    @rankings = compute_rankings
+    @ranked, @unranked = compute_rankings
     haml :gametracker
   end
 
