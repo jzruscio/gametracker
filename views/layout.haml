@@ -6,8 +6,9 @@
     %link{:type => 'text/css', :rel => 'stylesheet', :href => '/css/stylesheet.css'}
     %title B/R Ping Pong Players
   %body.bp
-    -#%a{:href => '/new_user'}New Player
-    -#%a{:href => '/new_game'}New Game
     =haml :nav, :layout => false
+    %br
+    - if flash[:notice]
+      .notice=flash[:notice]
     = yield
     =haml :foot, :layout => false

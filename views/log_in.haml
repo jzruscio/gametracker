@@ -1,0 +1,7 @@
+%form{ :action => "/log_in", :method => "post"}
+  %fieldset
+    %label{:for => "email"} Email:
+    %input{:type => "text", :name => "email", :class => "text"}
+    %label{:for => "password"} Password:
+    %input{:type => "password", :name => "password", :class => "text"}
+  %input{:type => "submit", :value => "Login", :class => "button"}

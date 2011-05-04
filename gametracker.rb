@@ -11,6 +11,12 @@ require 'pg'
 require 'activesupport'
 require 'haml'
 require 'sass'
+require 'bcrypt'
+require 'rack-flash'
+require 'sinatra/redirect_with_flash'
+
+use Rack::Session::Cookie
+use Rack::Flash
 
 if ENV['RACK_ENV'] != 'production'
   db = Sequel.connect(ENV['SK_DB_URL'])
@@ -20,6 +26,14 @@ end
 
 before do
   @players = Player.order(:name).map(:name)
+  @current_user = current_user
+  unless request.path_info == '/log_in'
+    session[:flash] = nil 
+  end
+  require_auth = ['/new_game', '/new_user', '/update_password']
+  if require_auth.index(request.path_info) && !@current_user
+    not_logged_in("Please log in")
+  end
 end
 
 helpers do
@@ -52,6 +66,35 @@ class Player < Sequel::Model
     filter(:id => id).first[:name] || nil
   end
 
+  def self.update_password(user, password)
+    password_salt = BCrypt::Engine.generate_salt
+    password_hash = BCrypt::Engine.hash_secret(password, password_salt)
+    temp = Player.filter(:id => user.id).update(:password_hash => password_hash, :password_salt => password_salt)
+  end
+
+  def self.new_player(name, email, department, password)
+    password_salt = BCrypt::Engine.generate_salt
+    password_hash = BCrypt::Engine.hash_secret(password, password_salt)
+    Player.create(
+      :name => name.capitalize, 
+      :email => email,
+      :password_hash => password_hash,
+      :password_salt => password_salt,
+      :department => department.capitalize,
+      :sets_elo => 0,
+      :games_elo => 0,
+      :created_at => Time.now())
+  end
+
+  def self.authenticate(email, password)  
+    player = Player.filter(:email => email).first
+    if player && !player.password_hash.nil? && (player.password_hash == BCrypt::Engine.hash_secret(password, player.password_salt) )
+      player
+    else  
+      nil  
+    end  
+  end  
+
 end
 
 class GameSet < Sequel::Model(db[:sets])
@@ -81,10 +124,6 @@ class GameTracker < Sinatra::Application
      
     ranked = ranked.sort_by{|k| k[:sets_elo]}.reverse
     return ranked, unranked
-  end
-
-  def create_new_user(name)
-    Player.create(:name => name, :created_at => Time.now(), :sets_elo => 0, :games_elo => 0)
   end
 
   def set_winner(winners)
@@ -150,6 +189,15 @@ class GameTracker < Sinatra::Application
     sets_with_game_count
   end
 
+  def not_logged_in(message)
+    flash[:notice] = message
+    redirect '/log_in'
+  end
+
+  def current_user
+    Player.filter(:id => session[:player].id).first if session[:player]
+  end
+
   get '/' do
     @games = Game.order(:created_at.desc).limit(10)
     @sets = sets_with_games
@@ -158,7 +206,6 @@ class GameTracker < Sinatra::Application
   end
 
   get '/new_game' do
-    @players = Player.order(:name).map(:name)
     haml :new_game
   end
 
@@ -166,7 +213,6 @@ class GameTracker < Sinatra::Application
     @user = Player.filter(:id => params[:id]).first
     @games = Game.filter(:winner_id => params[:id]).or(:loser_id => params[:id]).order(:created_at.desc)
     @sets = sets_with_games(params[:id])
-    #@sets = GameSet.filter(:winner_id => params[:id]).or(:loser_id => params[:id]).order(:created_at.desc)
     haml :user
   end
 
@@ -193,9 +239,8 @@ class GameTracker < Sinatra::Application
     if (winners[2])
       save_game(winners[2], players - [winners[2]], params[:served3], params[:score3], set[:id])
     end
-
-
     redirect '/'
+
   end
 
   get '/new_user' do
@@ -203,11 +248,7 @@ class GameTracker < Sinatra::Application
   end
 
   post '/new_user' do
-    Player.create(
-      :name => params[:name].capitalize, 
-      :email => params[:email],
-      :department => params[:department].capitalize,
-      :created_at => Time.now())
+    Player.new_player(params[:name], params[:email], params[:department], params[:password])
     redirect '/'
   end
 
@@ -221,8 +262,37 @@ class GameTracker < Sinatra::Application
     return {:p1_wins => p1_wins, :p1_loses => p1_loses, :p2_wins => p2_wins, :p2_loses => p2_loses, :p1_cur => p1_cur_elo, :p2_cur => p2_cur_elo}.to_json
   end
 
+  get '/log_in' do
+    haml :log_in
+  end
+
+  post '/log_in' do
+    player = Player.authenticate(params[:email], params[:password])
+    if player
+      session[:player] = player
+      flash.now[:notice] = "Signed-in"  
+      redirect '/'
+    else
+      not_logged_in("Invalid email or password")
+    end
+  end
+
+  get '/log_out' do
+    session[:player] = nil
+    redirect '/'
+  end
+
   get "/css/:sheet.css" do |sheet|
     sass :"css/#{sheet}"
+  end
+
+  get '/update_password' do
+    haml :update_password
+  end
+
+  post '/update_password' do
+    Player.update_password(@current_user, params[:password])
+    redirect '/', flash[:notice] => "Password updated"
   end
 
 

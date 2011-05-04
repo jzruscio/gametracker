@@ -1,4 +1,14 @@
 #container.container_16
-  .grid_16
+  .grid_4
     - if request.path_info != '/'
       %a{:href => '/'}Home
+    - if @current_user
+      %a{:href => '/new_game'}Add Game Results
+  .grid_4
+    - if @current_user
+      %a{:href => '/update_password'}Change password
+  %div{:class => ['grid_4 prefix_4']}
+    - if @current_user
+      %a{:href => '/log_out'}Log Out
+    - else
+      %a{:href => '/log_in'}Log In
