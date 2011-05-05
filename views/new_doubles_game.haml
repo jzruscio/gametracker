@@ -1,0 +1,47 @@
+%script{:type => 'text/javascript', :src => 'js/new_doubles_game.js'}
+%form{ :action => "/new_doubles_game", :method => "post"}
+  %fieldset
+    %b Team 1
+    %label{:for => "player1"}Player 1
+    %select{:name => "player1", :id => "p1"}
+      - @players.each do |player|
+        %option{:value => player}=player
+    %label{:for => "player2"}Player 2
+    %select{:name => "player2", :id => "p2"}
+      - @players.each do |player|
+        %option{:value => player}=player
+    %br
+    %b Team 2
+    %label{:for => "player3"}Player 3
+    %select{:name => "player3", :id => "p3"}
+      - @players.each do |player|
+        %option{:value => player}=player
+    %label{:for => "player4"}Player 4
+    %select{:name => "player4", :id => "p4"}
+      - @players.each do |player|
+        %option{:value => player}=player
+    %br
+    %b Game 1:
+    %label{:for => "served1"} Served:
+    %select{:name => "served1", :id => "s1"}
+    %label{:for => "winner1"} Winner:
+    %select{:name => "winner1", :id => "w1"}
+    %label{:for => "score1"} Score:
+    %input{:type => "text", :name => "score1", :id => "sc1", :class => "text"}
+    %br
+    %b Game 2:
+    %label{:for => "served2"} Served:
+    %select{:name => "served2", :id => "s2"}
+    %label{:for => "winner2"} Winner:
+    %select{:name => "winner2", :id => "w2"}
+    %label{:for => "score2"} Score:
+    %input{:type => "text", :name => "score2", :id => "sc2", :class => "text"}
+    %br
+    %b Game 3 (if necessary):
+    %label{:for => "served3"} Served:
+    %select{:name => "served3", :id => "s3"}
+    %label{:for => "winner3"} Winner:
+    %select{:name => "winner3", :id => "w3"}
+    %label{:for => "score3"} Score:
+    %input{:type => "text", :name => "score3", :id => "sc3", :class => "text"}
+  %input{:type => "submit", :value => "Send", :class => "button"}

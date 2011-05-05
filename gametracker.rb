@@ -30,7 +30,7 @@ before do
   unless request.path_info == '/log_in'
     session[:flash] = nil 
   end
-  require_auth = ['/new_game', '/new_user', '/update_password']
+  require_auth = ['/new_game', '/new_user', '/update_password', '/new_doubles_game']
   if require_auth.index(request.path_info) && !@current_user
     not_logged_in("Please log in")
   end
@@ -46,6 +46,13 @@ helpers do
     end
   end
 
+end
+
+class DoubleGame < Sequel::Model(db[:doubles_games])
+end
+
+class DoubleSet < Sequel::Model(db[:doubles_sets])
+  one_to_many :doublegames
 end
 
 class Game < Sequel::Model
@@ -148,6 +155,33 @@ class GameTracker < Sinatra::Application
     )
   end
 
+  def save_doubles_game(winner1, winner2, loser1, loser2, served, score, set)
+    points = score.split('-')
+    #elo = calc_games_elo(winner, loser);
+#    DoubleGame.create do |g|
+#      g.winner1_id = winner1,
+#      g.winner2_id = winner2,
+#      g.loser1_id = loser1,
+#      g.loser2_id = loser2,
+#      g.served_id = Player.id_from_name(served),
+#      g.winner_score = points[0],
+#      g.loser_score = points[1],
+#      g.set_id = set,
+#      g.created_at = Time.now()
+#    end
+    doublesgame = DoubleGame.create(
+      :winner1_id => winner1,
+      :winner2_id => winner2,
+      :loser1_id => loser1,
+      :loser2_id => loser2,
+      :served_id => Player.id_from_name(served),
+      :winner_score => points[0],
+      :loser_score => points[1],
+      :set_id => set,
+      :created_at => Time.now()
+    )
+  end
+
   def calc_sets_elo(w, l)
     w_cur_elo = Player.filter(:id => w).first[:sets_elo] || 0
     l_cur_elo = Player.filter(:id => l).first[:sets_elo] || 0
@@ -205,6 +239,10 @@ class GameTracker < Sinatra::Application
     haml :gametracker
   end
 
+  get '/new_doubles_game' do
+    haml :new_doubles_game
+  end
+
   get '/new_game' do
     haml :new_game
   end
@@ -214,6 +252,51 @@ class GameTracker < Sinatra::Application
     @games = Game.filter(:winner_id => params[:id]).or(:loser_id => params[:id]).order(:created_at.desc)
     @sets = sets_with_games(params[:id])
     haml :user
+  end
+
+  post '/new_doubles_game' do
+puts "HI: #{params.inspect}"
+    winners = []
+    ["winner1", "winner2", "winner3"].each do |w|
+      if params[w] != ""
+        winners << params[w]
+      end
+    end
+
+    players = [params[:player1], params[:player2], params[:player3], params[:player4]]
+    player1 = Player.id_from_name(players[0])
+    player2 = Player.id_from_name(players[1])
+    player3 = Player.id_from_name(players[2])
+    player4 = Player.id_from_name(players[3])
+
+    set_winner = set_winner([params[:winner1], params[:winner2], params[:winner3]])
+    team1 = [player1, player2]
+    team2 = [player3, player4]
+ 
+    if set_winner == 'team1'
+      set = DoubleSet.create(:winner1_id => player1, :winner2_id => player2, :loser1_id => player3, :loser2_id => player4, :created_at => Time.now())
+    elsif set_winner == 'team2'
+      set = DoubleSet.create(:winner1_id => player3, :winner2_id => player4, :loser1_id => player1, :loser2_id => player2, :created_at => Time.now())
+    end 
+
+    if winners[0] == 'team1'
+      save_doubles_game(player1, player2, player3, player4, params[:served1], params[:score1], set[:id]);
+    else
+      save_doubles_game(player3, player4, player1, player2, params[:served1], params[:score1], set[:id]);
+    end
+    if winners[1] == 'team1'
+      save_doubles_game(player1, player2, player3, player4, params[:served2], params[:score2], set[:id]);
+    else
+      save_doubles_game(player3, player4, player1, player2, params[:served2], params[:score2], set[:id]);
+    end
+    if winners[2] && winners[2] == 'team1'
+      save_doubles_game(player1, player2, player3, player4, params[:served3], params[:score3], set[:id]);
+    elsif winners[2]
+      save_doubles_game(player3, player4, player1, player2, params[:served3], params[:score3], set[:id]);
+    end
+
+    redirect '/'
+
   end
 
   post '/new_game' do

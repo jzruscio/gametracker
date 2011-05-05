@@ -6,8 +6,11 @@
       %a{:href => '/new_game'}Add Game Results
   .grid_4
     - if @current_user
+      %a{:href => '/new_doubles_game'}Add Doubles Game Results
+  .grid_4
+    - if @current_user
       %a{:href => '/update_password'}Change password
-  %div{:class => ['grid_4 prefix_4']}
+  .grid_4
     - if @current_user
       %a{:href => '/log_out'}Log Out
     - else
