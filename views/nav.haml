@@ -1,17 +1,19 @@
 #container.container_16
-  .grid_4
+  - if @current_user
     - if request.path_info != '/'
-      %a{:href => '/'}Home
-    - if @current_user
-      %a{:href => '/new_game'}Add Game Results
-  .grid_4
-    - if @current_user
-      %a{:href => '/new_doubles_game'}Add Doubles Game Results
-  .grid_4
-    - if @current_user
-      %a{:href => '/update_password'}Change password
-  .grid_4
-    - if @current_user
-      %a{:href => '/log_out'}Log Out
+      .grid_2
+        %a{:href => '/'}Home
+      .grid_4
+        %a{:href => '/new_game'}Add Game Results
     - else
+      %div{:class => ['grid_4 prefix_2']}
+        %a{:href => '/new_game'}Add Game Results
+    .grid_4
+      %a{:href => '/new_doubles_game'}Add Doubles Game Results
+    .grid_4
+      %a{:href => '/update_password'}Change password
+    .grid_2
+      %a{:href => '/log_out'}Log Out
+  - else
+    %div{:class => ['grid_2 prefix_14']}
       %a{:href => '/log_in'}Log In

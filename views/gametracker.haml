@@ -31,7 +31,7 @@
     %center
       %b Must have played at least 3 sets to be ranked
   .clear
-  %div{:class => ['grid_5 prefix_2 suffix_1']}
+  .grid_5
     %h3.center Last 10 Set Results
     %table.pp.center
       %tr 
@@ -45,7 +45,7 @@
           %td="#{link_to_player(set[:loser])} (#{set[:loser_elo]})"
           %td=set[:num_games]
           -#%td= set[:created_at].strftime("%b %d, %Y")
-  .grid_7
+  .grid_5
     %h3.center Last 10 Game Results
     %table.pp.center
       %tr 
@@ -63,3 +63,15 @@
           %td= "#{game[:winner_score]}-#{game[:loser_score]}"
     %center
       %b Server is in uppercase
+  .grid_6
+    %h3.center Last 10 Doubles Game Results
+    %table.pp.center
+      %tr
+        %th Winners
+        %th Losers
+        %th # of Games
+      - @doubles_sets.each do |set|
+        %tr
+          %td="#{link_to_player(set[:w1])} & #{link_to_player(set[:w2])}" 
+          %td="#{link_to_player(set[:l1])} & #{link_to_player(set[:l2])}" 
+          %td=set[:num_games]

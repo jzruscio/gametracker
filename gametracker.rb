@@ -14,6 +14,7 @@ require 'sass'
 require 'bcrypt'
 require 'rack-flash'
 require 'sinatra/redirect_with_flash'
+require 'json'
 
 use Rack::Session::Cookie
 use Rack::Flash
@@ -48,10 +49,10 @@ helpers do
 
 end
 
-class DoubleGame < Sequel::Model(db[:doubles_games])
+class DoublesGame < Sequel::Model(db[:doubles_games])
 end
 
-class DoubleSet < Sequel::Model(db[:doubles_sets])
+class DoublesSet < Sequel::Model(db[:doubles_sets])
   one_to_many :doublegames
 end
 
@@ -59,6 +60,10 @@ class Game < Sequel::Model
   many_to_one :winner, :class => :Player
   many_to_one :loser, :class => :Player
   many_to_one :gameset
+
+  def self.for_user_id(user_id)
+    filter(:winner_id => user_id).or(:loser_id => user_id).order(:created_at.desc)
+  end
 end
 
 class Player < Sequel::Model
@@ -169,7 +174,7 @@ class GameTracker < Sinatra::Application
 #      g.set_id = set,
 #      g.created_at = Time.now()
 #    end
-    doublesgame = DoubleGame.create(
+    doublesgame = DoublesGame.create(
       :winner1_id => winner1,
       :winner2_id => winner2,
       :loser1_id => loser1,
@@ -223,6 +228,25 @@ class GameTracker < Sinatra::Application
     sets_with_game_count
   end
 
+  def doubles_sets_with_games(p1=nil)
+    dsets_with_game_count = []
+    if p1.nil?
+      dsets = DoublesSet.order(:created_at.desc).limit(10)
+    else
+      dsets_p1 = DoublesSet.filter(:winner1_id => p1).or(:winner2_id => p1).or(:loser1_id => p1).or(:loser2_id => p1)
+    end
+    dsets.each do |set|
+      dsets_with_game_count.push({
+        :w1 => Player.name_from_id(set[:winner1_id]),
+        :w2 => Player.name_from_id(set[:winner2_id]),
+        :l1 => Player.name_from_id(set[:loser1_id]),
+        :l2 => Player.name_from_id(set[:loser2_id]),
+        :num_games => DoublesGame.filter(:set_id => set[:id]).count
+      })
+    end
+    dsets_with_game_count
+  end
+
   def not_logged_in(message)
     flash[:notice] = message
     redirect '/log_in'
@@ -232,9 +256,32 @@ class GameTracker < Sinatra::Application
     Player.filter(:id => session[:player].id).first if session[:player]
   end
 
+  def sm_data(user_id)
+    data = []
+    opponents = []
+    games = Game.filter(:winner_id => user_id).or(:loser_id => user_id).order(:created_at.desc)
+    games.reverse.each do |game|
+      difference = (game[:winner_elo] - game[:loser_elo]).abs
+      scale = 1 / difference.to_f
+      if user_id == game[:loser_id].to_s
+        scale = scale * -1 
+        opponents << Player.name_from_id(game[:winner_id])
+      else
+        opponents << Player.name_from_id(game[:loser_id])
+      end
+      data << scale
+    end
+    {:data => data, :opponents => opponents}
+  end
+
+  get '/sm_data' do
+    sm_data(params[:user_id]).to_json
+  end
+
   get '/' do
     @games = Game.order(:created_at.desc).limit(10)
     @sets = sets_with_games
+    @doubles_sets = doubles_sets_with_games
     @ranked, @unranked = compute_rankings
     haml :gametracker
   end
@@ -249,13 +296,14 @@ class GameTracker < Sinatra::Application
 
   get '/user/:id' do
     @user = Player.filter(:id => params[:id]).first
-    @games = Game.filter(:winner_id => params[:id]).or(:loser_id => params[:id]).order(:created_at.desc)
+    @games = Game.for_user_id(params[:id])
     @sets = sets_with_games(params[:id])
+
     haml :user
   end
 
   post '/new_doubles_game' do
-puts "HI: #{params.inspect}"
+puts params.inspect
     winners = []
     ["winner1", "winner2", "winner3"].each do |w|
       if params[w] != ""
@@ -274,9 +322,9 @@ puts "HI: #{params.inspect}"
     team2 = [player3, player4]
  
     if set_winner == 'team1'
-      set = DoubleSet.create(:winner1_id => player1, :winner2_id => player2, :loser1_id => player3, :loser2_id => player4, :created_at => Time.now())
+      set = DoublesSet.create(:winner1_id => player1, :winner2_id => player2, :loser1_id => player3, :loser2_id => player4, :created_at => Time.now())
     elsif set_winner == 'team2'
-      set = DoubleSet.create(:winner1_id => player3, :winner2_id => player4, :loser1_id => player1, :loser2_id => player2, :created_at => Time.now())
+      set = DoublesSet.create(:winner1_id => player3, :winner2_id => player4, :loser1_id => player1, :loser2_id => player2, :created_at => Time.now())
     end 
 
     if winners[0] == 'team1'
