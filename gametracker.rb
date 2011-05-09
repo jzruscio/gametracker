@@ -256,13 +256,29 @@ class GameTracker < Sinatra::Application
     Player.filter(:id => session[:player].id).first if session[:player]
   end
 
+  def find_previous_elo(player, id)
+    previous_game = Game.filter(:winner_id => player).or(:loser_id => player).filter(:id < id).order(:id).last
+    if previous_game == nil
+      return
+    elsif player == previous_game[:winner_id]
+      return previous_game[:winner_elo]
+    else
+      return previous_game[:loser_elo]
+    end
+  end
+
   def sm_data(user_id)
     data = []
     opponents = []
     games = Game.filter(:winner_id => user_id).or(:loser_id => user_id).order(:created_at.desc)
     games.reverse.each do |game|
-      difference = (game[:winner_elo] - game[:loser_elo]).abs
-      scale = 1 / difference.to_f
+      winner_id = game[:winner_id]
+      loser_id = game[:loser_id]
+      winner_previous_elo = find_previous_elo(winner_id, game[:id]) || 0
+      loser_previous_elo = find_previous_elo(loser_id, game[:id]) || 0
+
+      difference = (winner_previous_elo - loser_previous_elo).abs
+      scale = difference == 0 ? 0 : 1 / difference.to_f
       if user_id == game[:loser_id].to_s
         scale = scale * -1 
         opponents << Player.name_from_id(game[:winner_id])
