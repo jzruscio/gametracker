@@ -20,7 +20,7 @@ use Rack::Session::Cookie
 use Rack::Flash
 
 if ENV['RACK_ENV'] != 'production'
-  db = Sequel.connect(ENV['SK_DB_URL'])
+  db = Sequel.connect(ENV['GT_DB_URL'])
 else
   db = Sequel.connect(ENV['DATABASE_URL'] || 'sqlite://my.db')
 end
@@ -47,6 +47,12 @@ helpers do
     end
   end
 
+end
+
+class DoublesTeam < Sequel::Model(db[:doubles_teams])
+  def self.id_from_players(p1, p2)
+    filter(:player1 => p1).and(:player2 => p2).first[:id] || nil
+  end
 end
 
 class DoublesGame < Sequel::Model(db[:doubles_games])
@@ -115,6 +121,17 @@ end
 
 class GameTracker < Sinatra::Application
 
+  def compute_doubles_rankings
+    teams = DoublesTeam.all
+    ranked = []
+    teams.each do |t|
+      ranked.push({:p1 => Player.name_from_id(t[:player1]), :p2 => Player.name_from_id(t[:player2]), :sets_elo => t[:sets_elo]})
+    end
+     
+    ranked = ranked.sort_by{|k| k[:sets_elo]}.reverse
+    return ranked
+  end
+
   def compute_rankings
     players = Player.all
     ranked = []
@@ -160,31 +177,31 @@ class GameTracker < Sinatra::Application
     )
   end
 
-  def save_doubles_game(winner1, winner2, loser1, loser2, served, score, set)
+  def save_doubles_game(winner1, winner2, loser1, loser2, winner_team, loser_team, served, score, set)
     points = score.split('-')
-    #elo = calc_games_elo(winner, loser);
-#    DoubleGame.create do |g|
-#      g.winner1_id = winner1,
-#      g.winner2_id = winner2,
-#      g.loser1_id = loser1,
-#      g.loser2_id = loser2,
-#      g.served_id = Player.id_from_name(served),
-#      g.winner_score = points[0],
-#      g.loser_score = points[1],
-#      g.set_id = set,
-#      g.created_at = Time.now()
-#    end
     doublesgame = DoublesGame.create(
       :winner1_id => winner1,
       :winner2_id => winner2,
       :loser1_id => loser1,
       :loser2_id => loser2,
+      :winner_team_id => winner_team,
+      :loser_team_id => loser_team,
       :served_id => Player.id_from_name(served),
       :winner_score => points[0],
       :loser_score => points[1],
       :set_id => set,
       :created_at => Time.now()
     )
+  end
+
+  def calc_doubles_sets_elo(w, l)
+    w_cur_elo = DoublesTeam.filter(:id => w).first[:sets_elo] || 0
+    l_cur_elo = DoublesTeam.filter(:id => l).first[:sets_elo] || 0
+    w_elo = Elo.compute(w_cur_elo, [ [ l_cur_elo, 1] ] )
+    l_elo = Elo.compute(l_cur_elo, [ [ w_cur_elo, 0] ] )
+    DoublesTeam.filter(:id => w).update(:sets_elo => w_elo)
+    DoublesTeam.filter(:id => l).update(:sets_elo => l_elo)
+    {:winner => w_elo, :loser => l_elo}
   end
 
   def calc_sets_elo(w, l)
@@ -299,6 +316,7 @@ class GameTracker < Sinatra::Application
     @sets = sets_with_games
     @doubles_sets = doubles_sets_with_games
     @ranked, @unranked = compute_rankings
+    @doubles_ranked = compute_doubles_rankings
     haml :gametracker
   end
 
@@ -328,35 +346,53 @@ puts params.inspect
     end
 
     players = [params[:player1], params[:player2], params[:player3], params[:player4]]
-    player1 = Player.id_from_name(players[0])
-    player2 = Player.id_from_name(players[1])
-    player3 = Player.id_from_name(players[2])
-    player4 = Player.id_from_name(players[3])
+    players_ids = []
+    players.each do |p|
+      players_ids.push(Player.id_from_name(p))
+    end
+    team1 = players_ids[0..1].sort
+    team2 = players_ids[2..3].sort
+    team1_id = DoublesTeam.id_from_players(team1[0], team1[1])
+    team2_id = DoublesTeam.id_from_players(team2[0], team2[1])
+    if (team1_id == nil)
+      t1 = DoublesTeam.create(:player1 => team1[0], :player2 => team1[1], :created_at => Time.now())
+      team1_id = t1.id
+    end
+    if (team2_id == nil)
+      t2 = DoublesTeam.create(:player1 => team2[0], :player2 => team2[1], :created_at => Time.now())
+      team2_id = t2.id
+    end
 
-    set_winner = set_winner([params[:winner1], params[:winner2], params[:winner3]])
-    team1 = [player1, player2]
-    team2 = [player3, player4]
+    set_winner = set_winner(winners)
+    if (set_winner == "team1")
+      set_winner_id = team1_id
+      set_loser_id = team2_id
+    else
+      set_winner_id = team2_id
+      set_loser_id = team1_id
+    end
+    sets_elo = calc_doubles_sets_elo(set_winner_id, set_loser_id)
  
     if set_winner == 'team1'
-      set = DoublesSet.create(:winner1_id => player1, :winner2_id => player2, :loser1_id => player3, :loser2_id => player4, :created_at => Time.now())
+      set = DoublesSet.create(:winner1_id => team1[0], :winner2_id => team1[1], :loser1_id => team2[0], :loser2_id => team2[1], :winner_team_id => team1_id, :loser_team_id => team2_id, :created_at => Time.now(), :winner_elo => sets_elo[:winner], :loser_elo => sets_elo[:loser])
     elsif set_winner == 'team2'
-      set = DoublesSet.create(:winner1_id => player3, :winner2_id => player4, :loser1_id => player1, :loser2_id => player2, :created_at => Time.now())
+      set = DoublesSet.create(:winner1_id => team2[0], :winner2_id => team2[1], :loser1_id => team1[0], :loser2_id => team1[1], :winner_team_id => team2_id, :loser_team_id => team1_id, :created_at => Time.now(), :winner_elo => sets_elo[:winner], :loser_elo => sets_elo[:loser])
     end 
 
     if winners[0] == 'team1'
-      save_doubles_game(player1, player2, player3, player4, params[:served1], params[:score1], set[:id]);
+      save_doubles_game(team1[0], team1[1], team2[0], team2[1], team1_id, team2_id, params[:served1], params[:score1], set[:id]);
     else
-      save_doubles_game(player3, player4, player1, player2, params[:served1], params[:score1], set[:id]);
+      save_doubles_game(team2[0], team2[1], team1[0], team1[1], team2_id, team1_id, params[:served1], params[:score1], set[:id]);
     end
     if winners[1] == 'team1'
-      save_doubles_game(player1, player2, player3, player4, params[:served2], params[:score2], set[:id]);
+      save_doubles_game(team1[0], team1[1], team2[0], team2[1], team1_id, team2_id, params[:served2], params[:score2], set[:id]);
     else
-      save_doubles_game(player3, player4, player1, player2, params[:served2], params[:score2], set[:id]);
+      save_doubles_game(team2[0], team2[1], team1[0], team1[1], team2_id, team1_id, params[:served2], params[:score2], set[:id]);
     end
     if winners[2] && winners[2] == 'team1'
-      save_doubles_game(player1, player2, player3, player4, params[:served3], params[:score3], set[:id]);
+      save_doubles_game(team1[0], team1[1], team2[0], team2[1], team1_id, team2_id, params[:served3], params[:score3], set[:id]);
     elsif winners[2]
-      save_doubles_game(player3, player4, player1, player2, params[:served3], params[:score3], set[:id]);
+      save_doubles_game(team2[0], team2[1], team1[0], team1[1], team2_id, team1_id, params[:served3], params[:score3], set[:id]);
     end
 
     redirect '/'

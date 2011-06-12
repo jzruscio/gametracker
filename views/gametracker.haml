@@ -1,5 +1,5 @@
 #container.container_16
-  %div{:class => ['grid_12 prefix_2']}
+  %div{:class => ['grid_10 prefix_0']}
     %h3.center Player Rankings
     %table.pp.center
       %tr
@@ -30,6 +30,18 @@
           %td= p[:department]
     %center
       %b Must have played at least 3 sets to be ranked
+  .grid_6
+    %h3.center Doubles Rankings
+    %table.pp.center
+      %tr
+        %th Rank (set elo)
+        %th Player 1
+        %th Player 2
+      - @doubles_ranked.each_index do |index|
+        %tr
+          %td="#{index+1} (#{@doubles_ranked[index][:sets_elo]})"
+          %td=link_to_player(@doubles_ranked[index][:p1])
+          %td=link_to_player(@doubles_ranked[index][:p2])
   .clear
   .grid_5
     %h3.center Last 10 Set Results
@@ -64,7 +76,7 @@
     %center
       %b Server is in uppercase
   .grid_6
-    %h3.center Last 10 Doubles Game Results
+    %h3.center Last 10 Doubles Sets Results
     %table.pp.center
       %tr
         %th Winners
