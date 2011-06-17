@@ -51,7 +51,12 @@ end
 
 class DoublesTeam < Sequel::Model(db[:doubles_teams])
   def self.id_from_players(p1, p2)
-    filter(:player1 => p1).and(:player2 => p2).first[:id] || nil
+    query = filter(:player1 => p1).and(:player2 => p2)
+    if query.empty?
+      return nil
+    else
+      return query.first[:id]
+    end
   end
 end
 
