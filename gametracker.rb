@@ -322,8 +322,8 @@ class GameTracker < Sinatra::Application
     @doubles_sets = doubles_sets_with_games
     @ranked, @unranked = compute_rankings
     @doubles_ranked = compute_doubles_rankings
-#    haml :gametracker
-    haml :tttpp, :layout => false
+    haml :gametracker
+#    haml :tttpp, :layout => false
   end
 
   get '/new_doubles_game' do
