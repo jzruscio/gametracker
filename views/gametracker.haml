@@ -1,5 +1,5 @@
 #container.container_16
-  %div{:class => ['grid_10 prefix_0']}
+  -#%div{:class => ['grid_10 prefix_0']}
     %h3.center Player Rankings
     %table.pp.center
       %tr
@@ -30,7 +30,7 @@
           %td= p[:department]
     %center
       %b Must have played at least 3 sets to be ranked
-  .grid_6
+  %div{:class => ['grid_6 prefix_2']}
     %h3.center Doubles Rankings
     %table.pp.center
       %tr
@@ -42,8 +42,8 @@
           %td="#{index+1} (#{@doubles_ranked[index][:sets_elo]})"
           %td=link_to_player(@doubles_ranked[index][:p1])
           %td=link_to_player(@doubles_ranked[index][:p2])
-  .clear
-  .grid_5
+  -#.clear
+  -#.grid_5
     %h3.center Last 10 Set Results
     %table.pp.center
       %tr 
@@ -57,7 +57,7 @@
           %td="#{link_to_player(set[:loser])} (#{set[:loser_elo]})"
           %td=set[:num_games]
           -#%td= set[:created_at].strftime("%b %d, %Y")
-  .grid_5
+  -#.grid_5
     %h3.center Last 10 Game Results
     %table.pp.center
       %tr 
