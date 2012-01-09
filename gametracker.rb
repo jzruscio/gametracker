@@ -484,5 +484,10 @@ puts params.inspect
     redirect '/', flash[:notice] => "Password updated"
   end
 
+  get '/ranks' do
+    rankings = compute_doubles_rankings 
+    rankings.to_json
+  end
+
 
 end
